@@ -1,3 +1,5 @@
+import random
+
 # ระบบเก็บข้อมูลโปเกมอน 3 ธาตุ (แต่ละธาตุมี 3 ร่าง)
 mon_dex = {
     "Water_Starter": [
@@ -144,3 +146,54 @@ def stat_fire(Lv, evo) :
     SPE = 12 + (3 * (Lv - 1)) + (evo * 5)
 
     return HP, DMG, DEF, SPE
+
+def water_damage(target, base_power, SPE, skill, attacker_stat_value, target_def):
+    """
+    target: ข้อมูลฝั่งเป้าหมาย (เช่น ธาตุ, เกราะ)
+    base_power: ความแรงพื้นฐานของสกิลนั้น ๆ
+    attacker_stat_value: ค่าสแตดที่ใช้โจมตี (เช่น DMG สำหรับสายไฟ, Speed สำหรับสายน้ำ)
+    target_def: ค่าเกราะ (DEF) ของเป้าหมาย
+    """
+    special = 0
+    if skill == 1:
+        base_power = 20  # ความแรงพื้นฐานของสกิลน้ำ 1
+        effectiveness = "none"
+    elif skill == 2:
+        base_power = 10  # ความแรงพื้นฐานของสกิลน้ำ 2
+        effectiveness = "-My_SPE"
+    elif skill == 3:
+        base_power = 70  # ความแรงพื้นฐานของสกิลน้ำ 3
+        effectiveness = "none"
+    elif skill == 4:
+        base_power = 110  # ความแรงพื้นฐานของสกิลน้ำ 4
+        effectiveness = "none"
+        special = SPE * 0.5  # เพิ่มความแรงสกิลตาม Speed ของผู้โจมตี
+    else:
+        raise ValueError("Invalid skill number. Must be between 1 and 4.")
+    
+    # 1. คำนวณดาเมทตั้งต้นจากสแตดผู้โจมตี + ความแรงสกิล
+    raw_damage = base_power + (attacker_stat_value * 0.8) + special
+    
+    # 2. หักลบด้วยเกราะ (DEF) ของเป้าหมาย โดยใช้สูตรสัดส่วน (Percentage Reduction)
+    # เกราะยิ่งเยอะ ดาเมทยิ่งลดลงเป็นเปอร์เซ็นต์ (ป้องกันดาเมทติดลบ หรือตีไม่เข้าเลย)
+    def_multiplier = 100 / (100 + target_def)
+    mitigated_damage = raw_damage * def_multiplier
+    
+    tgt_elem = target.get('element')
+    
+    if (tgt_elem == 'Fire'):
+        element_multiplier = 1.5  # ได้เปรียบธาตุ (แรงขึ้น 50%)
+    elif (tgt_elem == 'Wood'):
+        element_multiplier = 0.7  # เสียเปรียบธาตุ (เบาลง แต่ยังตีเข้า)
+    else:
+        element_multiplier = 1.0 # ธาตุเดียวกัน หรือไม่มีความได้เปรียบ/เสียเปรียบ
+
+    # 4. ตัวแปรสุ่มความแกว่ง (RNG Variation 85% - 115%) เพื่อความสมจริงแบบโปเกมอน
+    rng = random.uniform(0.85, 1.15)
+    
+    # 5. คำนวณดาเมทสุทธิ
+    final_damage = mitigated_damage * element_multiplier * rng
+    
+    # กำหนดให้ดาเมทต่ำสุดคือ 1 เสมอ
+    return max(1, int(final_damage))
+
