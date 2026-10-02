@@ -100,7 +100,7 @@ mon_dex = {
     ]
 }
 
-
+# ฟังก์ชันแสดงโปเกมอนตามธาตุและร่าง
 def show_mon(element_key, stage_num):
     mon = mon_dex[element_key][stage_num - 1]
     print(f"=== {mon['name']} ===")
@@ -109,6 +109,7 @@ def show_mon(element_key, stage_num):
     print("-" * 20)
 
 def LVUP(EXP, LV):
+    # คำนวณ EXP ที่ต้องการสำหรับการเลเวลอัพแต่ละเลเวล
     Req_EXP = (50 * (1.12 ** (LV - 1))) // 1
     Total_EXP = 0
     while LV < 100:
@@ -122,7 +123,7 @@ def LVUP(EXP, LV):
     return LV, Total_EXP, next_req_exp
 
 
-
+# สเตดของโปเกมอนแต่ละธาตุ (HP, DMG, DEF, SPE) โดยคำนวณจาก Level และ Evolution Stage
 def stat_water(Lv, evo) :
     HP = 45 + (4 * (Lv - 1)) + (evo * 5)
     DMG = 10 + (2 * (Lv - 1)) + (evo * 2)
@@ -147,6 +148,7 @@ def stat_fire(Lv, evo) :
 
     return HP, DMG, DEF, SPE
 
+# ฟังก์ชันคำนวณดาเมทจากสกิลน้ำ
 def water_damage(target, base_power, SPE, skill, attacker_stat_value, target_def):
     """
     target: ข้อมูลฝั่งเป้าหมาย (เช่น ธาตุ, เกราะ)
@@ -156,17 +158,17 @@ def water_damage(target, base_power, SPE, skill, attacker_stat_value, target_def
     """
     special = 0
     if skill == 1:
-        base_power = 20  # ความแรงพื้นฐานของสกิลน้ำ 1
+        base_power = 25  # ความแรงพื้นฐานของสกิลน้ำ 1
         effectiveness = "none"
     elif skill == 2:
         base_power = 10  # ความแรงพื้นฐานของสกิลน้ำ 2
-        effectiveness = "-My_SPE"
+        effectiveness = "+ My_SPE"
     elif skill == 3:
         base_power = 70  # ความแรงพื้นฐานของสกิลน้ำ 3
         effectiveness = "none"
     elif skill == 4:
         base_power = 110  # ความแรงพื้นฐานของสกิลน้ำ 4
-        effectiveness = "none"
+        effectiveness = "ติด staun 1 turn"
         special = SPE * 0.5  # เพิ่มความแรงสกิลตาม Speed ของผู้โจมตี
     else:
         raise ValueError("Invalid skill number. Must be between 1 and 4.")
@@ -183,7 +185,7 @@ def water_damage(target, base_power, SPE, skill, attacker_stat_value, target_def
     
     if (tgt_elem == 'Fire'):
         element_multiplier = 1.5  # ได้เปรียบธาตุ (แรงขึ้น 50%)
-    elif (tgt_elem == 'Wood'):
+    elif (tgt_elem == ('Wood' or'Eternal')):
         element_multiplier = 0.7  # เสียเปรียบธาตุ (เบาลง แต่ยังตีเข้า)
     else:
         element_multiplier = 1.0 # ธาตุเดียวกัน หรือไม่มีความได้เปรียบ/เสียเปรียบ
@@ -197,3 +199,82 @@ def water_damage(target, base_power, SPE, skill, attacker_stat_value, target_def
     # กำหนดให้ดาเมทต่ำสุดคือ 1 เสมอ
     return max(1, int(final_damage))
 
+# ฟังก์ชันคำนวณดาเมทจากสกิลไม้
+def wood_damage(target, base_power, DEF, skill, attacker_stat_value, target_def):
+
+    special = 0
+    if skill == 1:
+        base_power = 20
+        effectiveness = "none"
+    elif skill == 2:
+        base_power = 7
+        effectiveness = "+ My_DEF"
+    elif skill == 3:
+        base_power = 70
+        effectiveness = "none"
+    elif skill == 4:
+        base_power = 110
+        effectiveness = "none"
+        special = DEF * 0.5
+    else:
+        raise ValueError("Invalid skill number. Must be between 1 and 4.")
+    
+    raw_damage = base_power + (attacker_stat_value * 0.8) + special
+    
+    def_multiplier = 100 / (100 + target_def)
+    mitigated_damage = raw_damage * def_multiplier
+    
+    tgt_elem = target.get('element')
+    
+    if (tgt_elem == 'water'):
+        element_multiplier = 1.5
+    elif (tgt_elem == ('Fire' or 'Eternal')):
+        element_multiplier = 0.7
+    else:
+        element_multiplier = 1.0
+
+    rng = random.uniform(0.85, 1.15)
+    
+    final_damage = mitigated_damage * element_multiplier * rng
+    
+    return max(1, int(final_damage))
+
+# ฟังก์ชันคำนวณดาเมทจากสกิลไฟ
+def fire_damage(target, base_power, DMG, skill, attacker_stat_value, target_def):
+
+    special = 0
+    if skill == 1:
+        base_power = 30
+        effectiveness = "30per burn"
+    elif skill == 2:
+        base_power = 10
+        effectiveness = "none"
+    elif skill == 3:
+        base_power = 70
+        effectiveness = "none"
+    elif skill == 4:
+        base_power = 120
+        effectiveness = "none"
+        special = DMG * 0.5
+    else:
+        raise ValueError("Invalid skill number. Must be between 1 and 4.")
+    
+    raw_damage = base_power + (attacker_stat_value * 0.8) + special
+    
+    def_multiplier = 100 / (100 + target_def)
+    mitigated_damage = raw_damage * def_multiplier
+    
+    tgt_elem = target.get('element')
+    
+    if (tgt_elem == 'wood'):
+        element_multiplier = 1.5
+    elif (tgt_elem == ('water' or 'Eternal')):
+        element_multiplier = 0.7
+    else:
+        element_multiplier = 1.0
+
+    rng = random.uniform(0.85, 1.15)
+    
+    final_damage = mitigated_damage * element_multiplier * rng
+    
+    return max(1, int(final_damage))
