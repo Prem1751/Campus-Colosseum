@@ -1,1 +1,5 @@
-def stage1()
+import information as p
+
+def maingamepath():
+
+def stage
