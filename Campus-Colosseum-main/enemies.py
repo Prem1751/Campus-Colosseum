@@ -17,59 +17,113 @@ STAT_FUNC = {
     "Eternal": stat_eternal
 }
 
+# ปรับเปลี่ยนค่าพลังได้ที่นี่เพื่อปรับสมดุลของเกมตามความเหมาะสม
+STAGE_STATS = {
+    1: {"DMG": 15, "DEF": 18, "Speed": 10},
+    2: {"DMG": 28, "DEF": 12, "Speed": 15},
+    3: {"DMG": 22, "DEF": 25, "Speed": 35},
+    4: {"DMG": 35, "DEF": 35, "Speed": 20},
+    5: {"DMG": 50, "DEF": 20, "Speed": 25},
+    6: {"DMG": 40, "DEF": 30, "Speed": 45},
+    7: {"DMG": 65, "DEF": 45, "Speed": 30},
+    8: {"DMG": 85, "DEF": 35, "Speed": 40},
+    9: {"DMG": 75, "DEF": 50, "Speed": 60},
+    10: {"DMG": 120, "DEF": 70, "Speed": 80},
+}
+
+
+def get_speed(unit):
+    return float(unit.get("Speed", unit.get("SPE", 0)))
+
+ #  ใครสปีดมากกว่าจะได้โจมตีก่อน แค่ถ้าห่างไม่มากต้องช่วงชิงกันเพื่อแย่งเทิร์นโจมตี
+def has_turn_priority(enemy, player):
+    enemy_speed = get_speed(enemy)
+    player_speed = get_speed(player)
+    speed_diff = enemy_speed - player_speed
+
+    if speed_diff <= 0:
+        return False
+
+    if speed_diff >= 20:
+        return True
+
+    roll = random.random()
+    win_chance = 0.5 + (speed_diff / 40)
+    return roll < min(win_chance, 0.95)
+
+
 def stage1():
     monHP = 120
     monLv = 3
-    return make_enemy("Leaf_Sprout", "Wood", monHP, monLv)
+    stats = STAGE_STATS[1]
+    return make_enemy("Leaf_Sprout", "Wood", monHP, monLv, dmg=stats["DMG"], defense=stats["DEF"], speed=stats["Speed"])
+
 
 def stage2():
     monHP = 200
     monLv = 7
-    return make_enemy("Flame_Spark", "Fire", monHP, monLv)
+    stats = STAGE_STATS[2]
+    return make_enemy("Flame_Spark", "Fire", monHP, monLv, dmg=stats["DMG"], defense=stats["DEF"], speed=stats["Speed"])
+
 
 def stage3():
     monHP = 320
     monLv = 12
-    return make_enemy("Aqua_Puff", "Water", monHP, monLv)
+    stats = STAGE_STATS[3]
+    return make_enemy("Aqua_Puff", "Water", monHP, monLv, dmg=stats["DMG"], defense=stats["DEF"], speed=stats["Speed"])
+
 
 def stage4():
     monHP = 480
     monLv = 17
-    return make_enemy("Branch_Guard", "Wood", monHP, monLv)
+    stats = STAGE_STATS[4]
+    return make_enemy("Branch_Guard", "Wood", monHP, monLv, dmg=stats["DMG"], defense=stats["DEF"], speed=stats["Speed"])
+
 
 def stage5():
     monHP = 650
     monLv = 22
-    return make_enemy("Blaze_Fang", "Fire", monHP, monLv)
+    stats = STAGE_STATS[5]
+    return make_enemy("Blaze_Fang", "Fire", monHP, monLv, dmg=stats["DMG"], defense=stats["DEF"], speed=stats["Speed"])
+
 
 def stage6():
     monHP = 850
     monLv = 28
-    return make_enemy("Aqua_Fin", "Water", monHP, monLv)
+    stats = STAGE_STATS[6]
+    return make_enemy("Aqua_Fin", "Water", monHP, monLv, dmg=stats["DMG"], defense=stats["DEF"], speed=stats["Speed"])
+
 
 def stage7():
     monHP = 1100
     monLv = 36
-    return make_enemy("Forest_Titan", "Wood", monHP, monLv)
+    stats = STAGE_STATS[7]
+    return make_enemy("Forest_Titan", "Wood", monHP, monLv, dmg=stats["DMG"], defense=stats["DEF"], speed=stats["Speed"])
+
 
 def stage8():
     monHP = 1400
     monLv = 42
-    return make_enemy("Solar_Inferno", "Fire", monHP, monLv)
+    stats = STAGE_STATS[8]
+    return make_enemy("Solar_Inferno", "Fire", monHP, monLv, dmg=stats["DMG"], defense=stats["DEF"], speed=stats["Speed"])
+
 
 def stage9():
     monHP = 1800
     monLv = 49
-    return make_enemy("Tidal_Levi", "Water", monHP, monLv)
+    stats = STAGE_STATS[9]
+    return make_enemy("Tidal_Levi", "Water", monHP, monLv, dmg=stats["DMG"], defense=stats["DEF"], speed=stats["Speed"])
+
 
 def stage10():
     monHP = 2500
     monLv = 60
-    return make_enemy("Leviathano_de_Sperouchi", "Eternal", monHP, monLv)
+    stats = STAGE_STATS[10]
+    return make_enemy("Leviathano_de_Sperouchi", "Eternal", monHP, monLv, dmg=stats["DMG"], defense=stats["DEF"], speed=stats["Speed"])
 
 # สกิลที่ผู้เล่นจะเผาศัตรู 2 เทิร์น
 def FireDOT(enemy):
-    print("THE ENEMY IS BURNING Y O U ! ! !")
+    print("IT IS YOUR TURN TO BURNING T H E M ! ! !")
     dot_dmg = enemy["HP"] * 5 / 100
     for i in range(2):
         enemy["HP"] = max(0, enemy["HP"] - dot_dmg)
@@ -78,7 +132,7 @@ def FireDOT(enemy):
 
 # มอนสเตอร์ลดดาเมจผู้เล่น
 def debuff(enemy, player):
-    print("THE ENEMIES ARE DEBUFFING Y O U ! ! !")
+    print("IT IS YOUR TURN TO BE DEBUFFED ! ! !")
     debuff_dmg = enemy["HP"] * 5 / 100
     player["DMG"] = max(0, player["DMG"] - debuff_dmg)
     print("DEBUFF APPLIED! Your DMG is now: ", player["DMG"])
@@ -124,8 +178,16 @@ def use_player_skill_on_turn(player_monster, enemy, turn):
     FireDOT(enemy)
     return True
 
-def make_enemy(name, element, monHP, Lv, evo=0):
-    _, DMG, DEF, SPE = STAT_FUNC[element](Lv, evo)   # ทิ้ง HP จากสูตร ใช้ HP ที่กรอก
+def make_enemy(name, element, monHP, Lv, evo=0, dmg=None, defense=None, speed=None):
+    if dmg is not None and defense is not None and speed is not None:
+        DMG = dmg
+        DEF = defense
+        Speed = speed
+        SPE = speed
+    else:
+        _, DMG, DEF, SPE = STAT_FUNC[element](Lv, evo)
+        Speed = SPE
+
     return {
         "name": name,
         "element": element,
@@ -134,6 +196,7 @@ def make_enemy(name, element, monHP, Lv, evo=0):
         "DMG": DMG,
         "DEF": DEF,
         "SPE": SPE,
+        "Speed": Speed,
         "skill_turn": random_skill_turn(element),
     }
 
@@ -165,4 +228,5 @@ def games():
                     return
     else:
         print("Congratulations! You have completed all stages.")
-    
+        print()
+        print("The Mighty Campus once peaceful and serene once again")
