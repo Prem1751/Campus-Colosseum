@@ -97,10 +97,29 @@ mon_dex = {
                 "((((~~~F~~~))))"
             ]
         }
-    ]
+    ],
+    "boss_dex": {
+        "Leviathano_de_Sperouchi": {
+            "name": "Leviathano de Sperouchi (BOSS)",
+            "element": "Water",
+            "art": [
+                r"             /\   /\  /\   /\             ",
+            r"         _.-~~~~~~~~~~~~~~~~~~-._         ",
+            r"     .-~~                        ~~-.     ",
+            r"   /     \__(O)            (O)__/     \   ",
+            r"  |                 ||                 |  ",
+            r"  \  VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV  /  ",
+            r"   \    /\/\/\/\/\/\  /\/\/\/\/\/\    /   ",
+            r"    \________________________________/    ",
+            r"      `-._   ||||||||||||||||   _.-'      ",
+            r"~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-",
+            r" -~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~ ",
+        ]
+    }
+}
 }
 
-# ฟังก์ชันแสดงโปเกมอนตามธาตุและร่าง
+
 def show_mon(element_key, stage_num):
     mon = mon_dex[element_key][stage_num - 1]
     print(f"=== {mon['name']} ===")
@@ -109,7 +128,6 @@ def show_mon(element_key, stage_num):
     print("-" * 20)
 
 def LVUP(EXP, LV):
-    # คำนวณ EXP ที่ต้องการสำหรับการเลเวลอัพแต่ละเลเวล
     Req_EXP = (50 * (1.12 ** (LV - 1))) // 1
     Total_EXP = 0
     while LV < 100:
@@ -123,7 +141,7 @@ def LVUP(EXP, LV):
     return LV, Total_EXP, next_req_exp
 
 
-# สเตดของโปเกมอนแต่ละธาตุ (HP, DMG, DEF, SPE) โดยคำนวณจาก Level และ Evolution Stage
+
 def stat_water(Lv, evo) :
     HP = 45 + (4 * (Lv - 1)) + (evo * 5)
     DMG = 10 + (2 * (Lv - 1)) + (evo * 2)
