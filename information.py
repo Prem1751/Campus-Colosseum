@@ -298,7 +298,7 @@ def fire_damage(target, base_power, DMG, skill, attacker_stat_value, target_def)
     return max(1, int(final_damage))
 
 
-# Element Chart
+# ตารางธาตุ
 ELEMENT_CHART = {
     "Water": {
         "Water": 1.0,
