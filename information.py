@@ -296,3 +296,41 @@ def fire_damage(target, base_power, DMG, skill, attacker_stat_value, target_def)
     final_damage = mitigated_damage * element_multiplier * rng
     
     return max(1, int(final_damage))
+
+
+# Element Chart
+ELEMENT_CHART = {
+    "Water": {
+        "Water": 1.0,
+        "Wood": 0.7,
+        "Fire": 1.5,
+        "Eternal": 1.0
+    },
+
+    "Wood": {
+        "Water": 1.5,
+        "Wood": 1.0,
+        "Fire": 0.7,
+        "Eternal": 1.0
+    },
+
+    "Fire": {
+        "Water": 0.7,
+        "Wood": 1.5,
+        "Fire": 1.0,
+        "Eternal": 1.0
+    },
+
+    "Eternal": {
+        "Water": 1.0,
+        "Wood": 1.0,
+        "Fire": 1.0,
+        "Eternal": 1.0
+    }
+}
+
+
+def get_element_multiplier(attacker_element, defender_element):
+    return ELEMENT_CHART.get(
+        attacker_element, {}
+    ).get(defender_element, 1.0)
