@@ -210,23 +210,52 @@ def tryagain():
         else:
             print("Invalid input. Please enter 'y' or 'n'.")
 
-def games():
+def games(player):
     stages = [stage1, stage2, stage3, stage4, stage5, stage6, stage7, stage8, stage9, stage10]
+    from battle import battle
+
     for i, stage_func in enumerate(stages):
         print(f"Stage {i + 1} - {stage_func.__name__}")
-        enemy = stage_func()
-        print(f"Enemy: {enemy['name']}, Element: {enemy['element']}, HP: {enemy['HP']}, Lv: {enemy['Lv']}")
         while True:
-            if enemy['HP'] <= 0 and p.HP > 0:
-                print("Monster DIED!")
-                lv, total_exp, next_req_exp = p.LVUP(100, 1)
-                print(f"Level up! New level: {lv}")
-            elif enemy['HP'] > 0 and p.HP <= 0:
-                print("Player DIED!")
-                if not tryagain():
-                    print("The Colosseum wins over the man of campus once again...")
-                    return
+            enemy = stage_func()
+            player["HP"] = player["maxHP"]
+            player["DMG"] = player.get("original_DMG", player["DMG"])
+            print(f"Enemy: {enemy['name']}, Element: {enemy['element']}, HP: {enemy['HP']}, Lv: {enemy['Lv']}")
+
+            if battle(player, enemy):
+                print("Enemy defeated!")
+                earned_exp = enemy["Lv"] * 20
+                old_level = player["Lv"]
+                level, remaining_exp, next_req_exp = p.LVUP(
+                    player.get("EXP", 0) + earned_exp,
+                    old_level,
+                )
+                player["Lv"] = level
+                player["EXP"] = remaining_exp
+                player["next_req_exp"] = next_req_exp
+                print(f"Earned {earned_exp} EXP.")
+
+                if level > old_level:
+                    max_hp, damage, defense, speed = STAT_FUNC[player["element"]](
+                        level, player.get("evo", 0)
+                    )
+                    hp_increase = max_hp - player["maxHP"]
+                    player["maxHP"] = max_hp
+                    player["HP"] = min(max_hp, player["HP"] + hp_increase)
+                    player["DMG"] = damage
+                    player["DEF"] = defense
+                    player["SPE"] = speed
+                    player["Speed"] = speed
+                    player["original_DMG"] = damage
+                    print(f"Level up! New level: {level}")
+
+                break
+
+            print("Player DIED!")
+            if not tryagain():
+                print("The Colosseum wins over the man of campus once again...")
+                return
+            player["HP"] = player["maxHP"]
+            player["DMG"] = player.get("original_DMG", player["DMG"])
     else:
         print("Congratulations! You have completed all stages.")
-        print()
-        print("The Mighty Campus once peaceful and serene once again")
