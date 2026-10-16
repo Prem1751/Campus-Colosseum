@@ -53,7 +53,6 @@ def attack(attacker, defender):
         print("Normal damage (Base)")
 
     print(f"Base damage: {base_damage}")
-    print(f"Type multiplier: x{multiplier}")
     print(f"Damage: {damage}")
     print(f"{defender['name']} HP: {defender['HP']}")
 
