@@ -3,16 +3,57 @@ import information as p
 import enemies as e
 
 
+
+# =====================================
+# ระบบแพ้ทาง - ชนะทางของธาตุ
+# =====================================
+def get_type_effectiveness(attacker_element, defender_element):
+    multiplier = p.get_type_multiplier(
+        attacker_element,
+        defender_element
+    )
+
+    if multiplier > 1.0:
+        return multiplier, "Strong"
+    elif multiplier < 1.0:
+        return multiplier, "Weak"
+
+    return 1.0, "Base"
+
 # =====================================
 # ระบบคำนวณความเสียหาย
 # =====================================
-
 def attack(attacker, defender):
-    damage = max(1, int(attacker["DMG"] - defender["DEF"]))
+    # คำนวณดาเมจพื้นฐานจาก DMG และ DEF
+    base_damage = max(
+        1,
+        int(attacker["DMG"] - defender["DEF"])
+    )
 
+    # ตรวจสอบความได้เปรียบของธาตุ
+    multiplier, result = get_type_effectiveness(
+        attacker["element"],
+        defender["element"]
+    )
+
+    # คำนวณดาเมจสุดท้าย
+    damage = max(1, int(base_damage * multiplier))
+
+    # ลด HP ของเป้าหมาย
     defender["HP"] = max(0, defender["HP"] - damage)
 
-    print(f"\n{attacker['name']} attacks!")
+    # แสดงผลการโจมตี
+    print(f"\n{attacker['name']} attacks {defender['name']}!")
+
+    if result == "Strong":
+        print("SUPER EFFECTIVE! (ชนะทาง)")
+    elif result == "Weak":
+        print("Not very effective... (แพ้ทาง)")
+    else:
+        print("Normal damage (Base)")
+
+    print(f"Base damage: {base_damage}")
+    print(f"Type multiplier: x{multiplier}")
     print(f"Damage: {damage}")
     print(f"{defender['name']} HP: {defender['HP']}")
 
@@ -77,6 +118,11 @@ def player_skill(player, enemy):
     if element == "Fire" and skill == 1 and enemy["HP"] > 0:
         enemy["burn_turns"] = 2
         print("The enemy is burning!")
+        
+    # สกิลน้ำหมายเลข 4 ทำให้ศัตรูติด Stun
+    if element == "Water" and skill == 4 and enemy["HP"] > 0:
+        enemy["stun_turns"] = 1
+        print("The enemy is stunned!")
 
 
 # =====================================
@@ -134,6 +180,11 @@ def boss_ai(boss, player):
 # =====================================
 
 def boss_action(boss, player):
+    if boss.get("stun_turns", 0) > 0:
+        boss["stun_turns"] -= 1
+        print(f"{boss['name']} is stunned and cannot act!")
+        return
+    
     action = boss_ai(boss, player)
 
     print(f"\n{boss['name']} is thinking...")
@@ -180,12 +231,13 @@ def boss_action(boss, player):
 # =====================================
 
 def battle(player, enemy):
-    player["maxHP"] = player["HP"]
+    player.setdefault("maxHP", player["HP"])
     enemy["maxHP"] = enemy["HP"]
 
     player["original_DMG"] = player["DMG"]
     player["debuff_turns"] = 0
     enemy["burn_turns"] = 0
+    enemy["stun_turns"] = 0
 
     turn = 1
 
@@ -226,16 +278,17 @@ def battle(player, enemy):
             print("\nYOU LOSE!")
             return False
 
+        # ใช้สถานะผิดปกติหลังจบการกระทำของทั้งสองฝ่าย
         apply_status(player, enemy)
 
         if enemy["HP"] <= 0:
+            print("\nThe enemy fainted from a status effect!")
             print("\nYOU WIN!")
             return True
 
         if player["HP"] <= 0:
             print("\nYOU LOSE!")
             return False
-
         turn += 1
 
     return player["HP"] > 0

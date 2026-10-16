@@ -1,5 +1,29 @@
 import random
 
+def get_type_multiplier(attacker_element, defender_element):
+    strong_against = {
+        "Water": "Fire",
+        "Fire": "Wood",
+        "Wood": "Water",
+    }
+
+    weak_against = {
+        "Water": "Wood",
+        "Wood": "Fire",
+        "Fire": "Water",
+    }
+
+    if defender_element == "Eternal":
+        return 0.7
+
+    if strong_against.get(attacker_element) == defender_element:
+        return 1.5
+
+    if weak_against.get(attacker_element) == defender_element:
+        return 0.7
+
+    return 1.0
+
 # ระบบเก็บข้อมูลโปเกมอน 3 ธาตุ (แต่ละธาตุมี 3 ร่าง)
 mon_dex = {
     "Water_Starter": [
@@ -127,19 +151,26 @@ def show_mon(element_key, stage_num):
         print(line)
     print("-" * 20)
 
+
 def LVUP(EXP, LV):
-    Req_EXP = (50 * (1.12 ** (LV - 1))) // 1
-    Total_EXP = 0
+    EXP = max(0, int(EXP))
+    LV = max(1, int(LV))
+
     while LV < 100:
-        if EXP >= Req_EXP:
-            EXP -= Req_EXP
-            LV += 1
-        else:
+        req_exp = int(50 * (1.12 ** (LV - 1)))
+
+        if EXP < req_exp:
             break
 
-    next_req_exp = int(50 * (1.12 ** (LV - 1))) if LV < 100 else 0
-    return LV, Total_EXP, next_req_exp
+        EXP -= req_exp
+        LV += 1
 
+    next_req_exp = (
+        int(50 * (1.12 ** (LV - 1)))
+        if LV < 100 else 0
+    )
+
+    return LV, EXP, next_req_exp
 
 
 def stat_water(Lv, evo) :
@@ -168,131 +199,102 @@ def stat_fire(Lv, evo) :
 
 # ฟังก์ชันคำนวณดาเมทจากสกิลน้ำ
 def water_damage(target, base_power, SPE, skill, attacker_stat_value, target_def):
-    """
-    target: ข้อมูลฝั่งเป้าหมาย (เช่น ธาตุ, เกราะ)
-    base_power: ความแรงพื้นฐานของสกิลนั้น ๆ
-    attacker_stat_value: ค่าสแตดที่ใช้โจมตี (เช่น DMG สำหรับสายไฟ, Speed สำหรับสายน้ำ)
-    target_def: ค่าเกราะ (DEF) ของเป้าหมาย
-    """
     special = 0
+
     if skill == 1:
-        base_power = 25  # ความแรงพื้นฐานของสกิลน้ำ 1
-        effectiveness = "none"
+        base_power = 25
     elif skill == 2:
-        base_power = 10  # ความแรงพื้นฐานของสกิลน้ำ 2
-        effectiveness = "+ My_SPE"
+        base_power = 10
     elif skill == 3:
-        base_power = 70  # ความแรงพื้นฐานของสกิลน้ำ 3
-        effectiveness = "none"
+        base_power = 70
     elif skill == 4:
-        base_power = 110  # ความแรงพื้นฐานของสกิลน้ำ 4
-        effectiveness = "ติด staun 1 turn"
-        special = SPE * 0.5  # เพิ่มความแรงสกิลตาม Speed ของผู้โจมตี
+        base_power = 110
+        special = SPE * 0.5
     else:
         raise ValueError("Invalid skill number. Must be between 1 and 4.")
-    
-    # 1. คำนวณดาเมทตั้งต้นจากสแตดผู้โจมตี + ความแรงสกิล
-    raw_damage = base_power + (attacker_stat_value * 0.8) + special
-    
-    # 2. หักลบด้วยเกราะ (DEF) ของเป้าหมาย โดยใช้สูตรสัดส่วน (Percentage Reduction)
-    # เกราะยิ่งเยอะ ดาเมทยิ่งลดลงเป็นเปอร์เซ็นต์ (ป้องกันดาเมทติดลบ หรือตีไม่เข้าเลย)
-    def_multiplier = 100 / (100 + target_def)
-    mitigated_damage = raw_damage * def_multiplier
-    
-    tgt_elem = target.get('element')
-    
-    if (tgt_elem == 'Fire'):
-        element_multiplier = 1.5  # ได้เปรียบธาตุ (แรงขึ้น 50%)
-    elif (tgt_elem == ('Wood' or'Eternal')):
-        element_multiplier = 0.7  # เสียเปรียบธาตุ (เบาลง แต่ยังตีเข้า)
-    else:
-        element_multiplier = 1.0 # ธาตุเดียวกัน หรือไม่มีความได้เปรียบ/เสียเปรียบ
 
-    # 4. ตัวแปรสุ่มความแกว่ง (RNG Variation 85% - 115%) เพื่อความสมจริงแบบโปเกมอน
+    # คำนวณดาเมจพื้นฐาน
+    raw_damage = base_power + (attacker_stat_value * 0.8) + special
+
+    # ลดดาเมจตามเกราะของเป้าหมาย
+    def_multiplier = 100 / (100 + max(0, target_def))
+    mitigated_damage = raw_damage * def_multiplier
+
+    # คำนวณความได้เปรียบเสียเปรียบของธาตุน้ำ
+    target_element = target.get("element", "")
+    element_multiplier = get_type_multiplier("Water", target_element)
+
+    # สุ่มความแรง 85%-115%
     rng = random.uniform(0.85, 1.15)
-    
-    # 5. คำนวณดาเมทสุทธิ
+
     final_damage = mitigated_damage * element_multiplier * rng
-    
-    # กำหนดให้ดาเมทต่ำสุดคือ 1 เสมอ
+
     return max(1, int(final_damage))
 
 # ฟังก์ชันคำนวณดาเมทจากสกิลไม้
 def wood_damage(target, base_power, DEF, skill, attacker_stat_value, target_def):
-
     special = 0
+
     if skill == 1:
         base_power = 20
-        effectiveness = "none"
     elif skill == 2:
         base_power = 7
-        effectiveness = "+ My_DEF"
     elif skill == 3:
         base_power = 70
-        effectiveness = "none"
     elif skill == 4:
         base_power = 110
-        effectiveness = "none"
         special = DEF * 0.5
     else:
         raise ValueError("Invalid skill number. Must be between 1 and 4.")
-    
-    raw_damage = base_power + (attacker_stat_value * 0.8) + special
-    
-    def_multiplier = 100 / (100 + target_def)
-    mitigated_damage = raw_damage * def_multiplier
-    
-    tgt_elem = target.get('element')
-    
-    if (tgt_elem == 'water'):
-        element_multiplier = 1.5
-    elif (tgt_elem == ('Fire' or 'Eternal')):
-        element_multiplier = 0.7
-    else:
-        element_multiplier = 1.0
 
+    # คำนวณดาเมจพื้นฐาน
+    raw_damage = base_power + (attacker_stat_value * 0.8) + special
+
+    # ลดดาเมจตามเกราะเป้าหมาย
+    def_multiplier = 100 / (100 + max(0, target_def))
+    mitigated_damage = raw_damage * def_multiplier
+
+    # ใช้ตัวคูณธาตุ Wood
+    target_element = target.get("element", "")
+    element_multiplier = get_type_multiplier("Wood", target_element)
+
+    # สุ่มความแรง 85%-115%
     rng = random.uniform(0.85, 1.15)
-    
+
     final_damage = mitigated_damage * element_multiplier * rng
-    
+
     return max(1, int(final_damage))
 
 # ฟังก์ชันคำนวณดาเมทจากสกิลไฟ
 def fire_damage(target, base_power, DMG, skill, attacker_stat_value, target_def):
-
     special = 0
+
     if skill == 1:
         base_power = 30
-        effectiveness = "30per burn"
     elif skill == 2:
         base_power = 10
-        effectiveness = "none"
     elif skill == 3:
         base_power = 70
-        effectiveness = "none"
     elif skill == 4:
         base_power = 120
-        effectiveness = "none"
         special = DMG * 0.5
     else:
         raise ValueError("Invalid skill number. Must be between 1 and 4.")
-    
-    raw_damage = base_power + (attacker_stat_value * 0.8) + special
-    
-    def_multiplier = 100 / (100 + target_def)
-    mitigated_damage = raw_damage * def_multiplier
-    
-    tgt_elem = target.get('element')
-    
-    if (tgt_elem == 'wood'):
-        element_multiplier = 1.5
-    elif (tgt_elem == ('water' or 'Eternal')):
-        element_multiplier = 0.7
-    else:
-        element_multiplier = 1.0
 
+    # คำนวณดาเมจพื้นฐาน
+    raw_damage = base_power + (attacker_stat_value * 0.8) + special
+
+    # ลดดาเมจตามเกราะเป้าหมาย
+    def_multiplier = 100 / (100 + max(0, target_def))
+    mitigated_damage = raw_damage * def_multiplier
+
+    # ใช้ตัวคูณธาตุ Fire
+    target_element = target.get("element", "")
+    element_multiplier = get_type_multiplier("Fire", target_element)
+
+    # สุ่มความแรง 85%-115%
     rng = random.uniform(0.85, 1.15)
-    
+
     final_damage = mitigated_damage * element_multiplier * rng
-    
+
     return max(1, int(final_damage))
