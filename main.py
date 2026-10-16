@@ -156,7 +156,7 @@ def start():
         enemies.stage10
     ]
 
-    stage_exp = [50, 60, 70, 80, 90, 100, 110, 120, 150, 200]
+    stage_exp = [120, 350, 900, 2200, 5000, 11000, 24000, 50000, 100000, 250000]
 
     total_exp = 0
     current_stage = 0
