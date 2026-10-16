@@ -271,11 +271,11 @@ def battle(player, enemy):
 
         # ตรวจสอบผลการต่อสู้
         if enemy["HP"] <= 0:
-            print("\nYOU WIN!")
+            print("\nYOU WIN!\nYOU WIN!\nYOU WIN!\nYOU WIN!\nYOU WIN!\nYOU WIN!\nYOU WIN!\nYOU WIN!\nYOU WIN!")
             return True
 
         if player["HP"] <= 0:
-            print("\nYOU LOSE!")
+            print("\nYOU LOSE!\nYOU LOSE!\nYOU LOSE!\nYOU LOSE!\nYOU LOSE!\nYOU LOSE!\nYOU LOSE!\nYOU LOSE!\nYOU LOSE!")
             return False
 
         # ใช้สถานะผิดปกติหลังจบการกระทำของทั้งสองฝ่าย
