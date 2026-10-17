@@ -1,4 +1,5 @@
 import random
+from unittest import result
 import information as p
 import enemies as e
 
@@ -23,8 +24,19 @@ def get_type_effectiveness(attacker_element, defender_element):
 # =====================================
 # ระบบคำนวณความเสียหาย
 # =====================================
+
 def attack(attacker, defender):
-    # คำนวณดาเมจพื้นฐานจาก DMG และ DEF
+    print(f"\n⚔️ {attacker['name']} โจมตี {defender['name']}!")
+
+    # โจมตีพลาด 10%
+    if random.random() < 0.10:
+        print("💨 ผลการโจมตี: MISS!")
+        print("💬 การโจมตีไม่โดนเป้าหมาย")
+        print(f"❤️ HP ของ {defender['name']}: "
+              f"{defender['HP']}/{defender.get('maxHP', defender['HP'])}")
+        return 0
+
+    # คำนวณดาเมจพื้นฐานตามสูตรเดิม
     base_damage = max(
         1,
         int(attacker["DMG"] - defender["DEF"])
@@ -36,116 +48,189 @@ def attack(attacker, defender):
         defender["element"]
     )
 
-    # คำนวณดาเมจสุดท้าย
     damage = max(1, int(base_damage * multiplier))
 
-    # ลด HP ของเป้าหมาย
+    # ลด HP เป้าหมาย
+    old_hp = defender["HP"]
     defender["HP"] = max(0, defender["HP"] - damage)
+    actual_damage = old_hp - defender["HP"]
 
-    # แสดงผลการโจมตี
-    print(f"\n{attacker['name']} attacks {defender['name']}!")
+    # แสดงผลแบบอ่านง่าย
+    print("🎯 ผลการโจมตี: โจมตีสำเร็จ!")
 
     if result == "Strong":
-        print("SUPER EFFECTIVE! (ชนะทาง)")
+        print("🔥 ได้เปรียบทางธาตุ! (Super Effective)")
     elif result == "Weak":
-        print("Not very effective... (แพ้ทาง)")
+        print("🛡️ เสียเปรียบทางธาตุ (Not Very Effective)")
     else:
-        print("Normal damage (Base)")
+        print("⚡ การโจมตีปกติ")
 
-    print(f"Base damage: {base_damage}")
-    print(f"Damage: {damage}")
-    print(f"{defender['name']} HP: {defender['HP']}")
+    print(f"💥 สร้างความเสียหาย: {actual_damage} หน่วย")
+    print(f"❤️ HP ของ {defender['name']}: "
+          f"{defender['HP']}/{defender.get('maxHP', defender['HP'])}")
 
-    return damage
+    if defender["HP"] <= 0:
+        print(f"💫 {defender['name']} หมดสภาพการต่อสู้!")
 
+    return actual_damage
 
 # =====================================
 # ระบบเลือกสกิลของผู้เล่น
 # =====================================
 
-def player_skill(player, enemy):
-    print("\n===== YOUR SKILLS =====")
-    print("1. Normal Attack")
-    print("2. Skill 1")
-    print("3. Skill 2")
-    print("4. Skill 3")
-    print("5. Skill 4")
+def choose_player_action(player):
+    while True:
+        choice = input("เลือกคำสั่ง (1-5): ").strip()
 
-    choice = input("Choose your action: ").strip()
+        if choice in ("1", "2", "3", "4", "5"):
+            return choice
 
+        print("⚠️ คำสั่งไม่ถูกต้อง กรุณาเลือก 1-5")
+        print("💚 คุณยังไม่เสียเทิร์น!")
+
+def player_skill(player, enemy, choice=None):
+    
+    element = player["element"]
+
+    # รายละเอียดสกิลตามธาตุ
+    skill_info = {
+        "Water": [
+            ("Water Pulse", "โจมตีด้วยพลังน้ำ"),
+            ("Aqua Shield", "โจมตีด้วยพลังน้ำ"),
+            ("Tidal Wave", "คลื่นน้ำโจมตีรุนแรง"),
+            ("Aqua Burst", "โจมตีรุนแรงและทำให้บอสติด Stun")
+        ],
+        "Wood": [
+            ("Leaf Strike", "โจมตีด้วยพลังพืช"),
+            ("Vine Whip", "โจมตีด้วยเถาวัลย์"),
+            ("Forest Force", "โจมตีด้วยพลังป่า"),
+            ("Nature Break", "โจมตีรุนแรงโดยใช้พลังป้องกัน")
+        ],
+        "Fire": [
+            ("Flame Shot", "โจมตีด้วยไฟ"),
+            ("Burning Flame", "โจมตีและทำให้ศัตรูติด Burn"),
+            ("Inferno", "โจมตีด้วยไฟรุนแรง"),
+            ("Blazing Burst", "โจมตีด้วยไฟมหาศาล")
+        ]
+    }
+
+    if choice is None:
+        choice = choose_player_action(player)
+    
+    # โจมตีปกติ
     if choice == "1":
         attack(player, enemy)
         return
 
-    if choice not in ("2", "3", "4", "5"):
-        print("Invalid choice!")
+    skill = int(choice) - 1
+    skill_name, description = skill_info[element][skill - 1]
+
+    print(f"\n✨ {player['name']} ใช้ {skill_name}!")
+    print(f"📖 {description}")
+
+    
+    # สกิลมีโอกาสพลาด 5%
+    if random.random() < 0.05:
+        print("\n💨 ผลการใช้สกิล: MISS!")
+        print(f"❌ {skill_name} พลาดเป้าหมาย!")
+        print("💬 ศัตรูไม่ได้รับความเสียหาย")
+        print(
+            f"❤️ HP ของ {enemy['name']}: "
+            f"{enemy['HP']}/{enemy.get('maxHP', enemy['HP'])}"
+        )
         return
 
-    skill = int(choice) - 1
-
-    element = player["element"]
-
+    # คำนวณดาเมจด้วยสูตรเดิม
     if element == "Water":
         damage = p.water_damage(
             enemy, 0, player["SPE"], skill,
             player["SPE"], enemy["DEF"]
         )
-
     elif element == "Wood":
         damage = p.wood_damage(
             enemy, 0, player["DEF"], skill,
             player["DMG"], enemy["DEF"]
         )
-
     elif element == "Fire":
         damage = p.fire_damage(
             enemy, 0, player["DMG"], skill,
             player["DMG"], enemy["DEF"]
         )
-
     else:
-        print("Unknown element!")
+        print("⚠️ ไม่รู้จักธาตุของผู้เล่น!")
         return
 
+    old_hp = enemy["HP"]
     enemy["HP"] = max(0, enemy["HP"] - damage)
+    actual_damage = old_hp - enemy["HP"]
 
-    print(f"\n{player['name']} used Skill {skill}!")
-    print(f"Damage: {damage}")
-    print(f"Enemy HP: {enemy['HP']}")
+    print("\n🎯 ผลการโจมตี: สำเร็จ!")
 
-    # สกิลไฟหมายเลข 1 มีโอกาสทำให้ติดสถานะเผาไหม้
-    if element == "Fire" and skill == 1 and enemy["HP"] > 0:
+    # แสดงผลความได้เปรียบทางธาตุ
+    multiplier, result = get_type_effectiveness(
+        player["element"],
+        enemy["element"]
+    )
+
+    if result == "Strong":
+        print("🔥 ได้เปรียบทางธาตุ! (Super Effective)")
+    elif result == "Weak":
+        print("🛡️ เสียเปรียบทางธาตุ (Not Very Effective)")
+    else:
+        print("⚡ การโจมตีปกติ")
+
+    print(f"💥 สร้างความเสียหาย: {actual_damage} หน่วย")
+    print(
+        f"❤️ HP ของ {enemy['name']}: "
+        f"{enemy['HP']}/{enemy.get('maxHP', enemy['HP'])}"
+    )
+    
+    # Fire Skill 2: Burn
+    if element == "Fire" and skill == 2 and enemy["HP"] > 0:
         enemy["burn_turns"] = 2
-        print("The enemy is burning!")
-        
-    # สกิลน้ำหมายเลข 4 ทำให้ศัตรูติด Stun
+        print("🔥 ศัตรูติดสถานะ Burn!")
+
+    # Water Skill 4: Stun
     if element == "Water" and skill == 4 and enemy["HP"] > 0:
         enemy["stun_turns"] = 1
-        print("The enemy is stunned!")
+        print("💧 ศัตรูติดสถานะ Stun!")
 
+    if enemy["HP"] <= 0:
+        print(f"💫 {enemy['name']} หมดสภาพการต่อสู้!")
 
 # =====================================
 # ระบบสถานะผิดปกติ
 # =====================================
 
 def apply_status(player, enemy):
-    # ความเสียหายจากการเผาไหม้
+
+    # ความเสียหายจาก Burn
     if enemy.get("burn_turns", 0) > 0 and enemy["HP"] > 0:
         damage = max(1, int(enemy["HP"] * 0.05))
-
         enemy["HP"] = max(0, enemy["HP"] - damage)
         enemy["burn_turns"] -= 1
 
-        print(f"Burn damage: {damage}")
-        print(f"Enemy HP: {enemy['HP']}")
+        print("\n🔥 สถานะ Burn ทำงาน!")
+        print(f"💥 ศัตรูได้รับความเสียหาย {damage} หน่วย")
+        print(
+            f"❤️ HP ของ {enemy['name']}: "
+            f"{enemy['HP']}/{enemy.get('maxHP', enemy['HP'])}"
+        )
 
-    # ลด DMG ของผู้เล่นจากดีบัฟ
+        if enemy["burn_turns"] == 0:
+            print("🔥 สถานะ Burn สิ้นสุดแล้ว")
+
+    # ลด DMG ของผู้เล่นจาก Debuff
     if player.get("debuff_turns", 0) > 0:
         player["debuff_turns"] -= 1
 
+        print("\n🛡️ ผลของ Debuff ยังคงทำงาน")
+        print(f"⚔️ DMG ปัจจุบัน: {player['DMG']}")
+
         if player["debuff_turns"] == 0:
             player["DMG"] = player["original_DMG"]
-            print("Your damage debuff has ended!")
+            print("✨ Debuff สิ้นสุดแล้ว!")
+            print(f"⚔️ DMG กลับเป็น {player['DMG']}")
 
 
 # =====================================
@@ -182,6 +267,12 @@ def boss_action(boss, player):
     if boss.get("stun_turns", 0) > 0:
         boss["stun_turns"] -= 1
         print(f"{boss['name']} is stunned and cannot act!")
+        return
+    
+ # บอสมีโอกาสโจมตีพลาด 10%
+    if random.random() < 0.10:
+        print(f"\n💨 {boss['name']} missed the attack!")
+        print("❌ BOSS MISS! บอสโจมตีพลาด!")
         return
     
     action = boss_ai(boss, player)
@@ -270,11 +361,11 @@ def battle(player, enemy):
 
         # ตรวจสอบผลการต่อสู้
         if enemy["HP"] <= 0:
-            print("\nYOU WIN!\nYOU WIN!\nYOU WIN!\nYOU WIN!\nYOU WIN!\nYOU WIN!\nYOU WIN!\nYOU WIN!\nYOU WIN!")
+            print("\nYOU WIN!")
             return True
 
         if player["HP"] <= 0:
-            print("\nYOU LOSE!\nYOU LOSE!\nYOU LOSE!\nYOU LOSE!\nYOU LOSE!\nYOU LOSE!\nYOU LOSE!\nYOU LOSE!\nYOU LOSE!")
+            print("\nYOU LOSE!")
             return False
 
         # ใช้สถานะผิดปกติหลังจบการกระทำของทั้งสองฝ่าย

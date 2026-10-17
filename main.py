@@ -2,7 +2,19 @@
 import information
 import enemies
 import battle
+import tkinter as tk
 
+def show_art(parent, pokemon):
+    art = pokemon.get("art", [])
+
+    label = tk.Label(
+        parent,
+        text="\n".join(art),
+        font=("Courier New", 10),
+        justify="left"
+    )
+    label.pack()
+    return label
 
 # =====================================
 # เลือกโปเกมอนเริ่มต้น
@@ -80,6 +92,55 @@ def get_required_exp(level):
     """Calculate EXP required for the next level."""
     return int(50 * (1.12 ** (level - 1)))
 
+def check_evolution(player):
+    old_evo = player.get("evo", 0)
+    level = player["Lv"]
+
+    if level >= 50:
+        new_evo = 2
+    elif level >= 25:
+        new_evo = 1
+    else:
+        new_evo = 0
+
+    if new_evo <= old_evo:
+        return
+
+    player["evo"] = new_evo
+
+# แสดงร่างใหม่เมื่อวิวัฒนาการ
+    information.show_mon(player["name"], new_evo + 1)
+
+    print(f"\n🎉 {player['name']} evolved!")
+    print(f"Evolution: {old_evo} -> {new_evo}")
+
+    stat_functions = {
+        "Water": information.stat_water,
+        "Wood": information.stat_wood,
+        "Fire": information.stat_fire,
+    }
+
+    stat_function = stat_functions[player["element"]]
+    max_hp, dmg, defense, speed = stat_function(
+        player["Lv"], new_evo
+    )
+
+    hp_increase = max_hp - player["maxHP"]
+    player["maxHP"] = max_hp
+    player["HP"] = min(max_hp, player["HP"] + hp_increase)
+
+    player["DMG"] = dmg
+    player["DEF"] = defense
+    player["SPE"] = speed
+    player["Speed"] = speed
+    player["original_DMG"] = dmg
+
+    print(f"HP: {player['HP']}/{player['maxHP']}")
+    print(f"DMG: {player['DMG']}")
+    print(f"DEF: {player['DEF']}")
+    print(f"SPE: {player['SPE']}")
+
+
 def gain_exp(player, reward):
     old_level = player["Lv"]
     current_exp = player.get("EXP", 0) + reward
@@ -92,29 +153,10 @@ def gain_exp(player, reward):
     player["EXP"] = remaining_exp
     player["next_req_exp"] = next_exp
 
+    # ตรวจ Evolution หลังอัปเดตเลเวล
+    check_evolution(player)
+
     if new_level > old_level:
-        stat_functions = {
-            "Water": information.stat_water,
-            "Wood": information.stat_wood,
-            "Fire": information.stat_fire,
-        }
-
-        stat_function = stat_functions[player["element"]]
-        max_hp, dmg, defense, speed = stat_function(
-            new_level, player.get("evo", 0)
-        )
-
-        # เพิ่ม HP ตามจำนวน HP สูงสุดที่เพิ่มขึ้น
-        hp_increase = max_hp - player["maxHP"]
-        player["maxHP"] = max_hp
-        player["HP"] = min(max_hp, player["HP"] + hp_increase)
-
-        player["DMG"] = dmg
-        player["DEF"] = defense
-        player["SPE"] = speed
-        player["Speed"] = speed
-        player["original_DMG"] = dmg
-
         print(f"\n🎉 Level Up! Lv.{old_level} -> Lv.{new_level}")
         print(f"HP: {player['HP']}/{player['maxHP']}")
         print(f"DMG: {player['DMG']}")
@@ -126,7 +168,6 @@ def gain_exp(player, reward):
         f"EXP ปัจจุบัน: {player['EXP']}/"
         f"{player['next_req_exp']}"
     )
-
 
 def show_exp(player, total_exp):
     required_exp = get_required_exp(player["Lv"])
@@ -157,13 +198,16 @@ def start():
     ]
 
     stage_exp = [120, 350, 900, 2200, 5000, 11000, 24000, 50000, 100000, 250000]
-
+    
     total_exp = 0
     current_stage = 0
 
     while current_stage < len(stages):
         print(f"\n========== STAGE {current_stage + 1} ==========")
-
+        information.show_mon(
+    player["name"],
+    min(player["evo"] + 1, 3)
+)
         enemy = stages[current_stage]()
         result = battle.battle(player, enemy)
 
