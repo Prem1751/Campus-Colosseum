@@ -49,18 +49,20 @@ def choose_pokemon():
     time.sleep(0.5)
 
     player = {
-        "name": name,
-        "element": element,
-        "Lv": 1,
-        "HP": HP,
-        "maxHP": HP,
-        "DMG": DMG,
-        "DEF": DEF,
-        "SPE": SPE,
-        "Speed": SPE,
-        "evo": 0,
-        "EXP": 0
-    }
+    "name": name,
+    "pokemon_key": name,
+    "display_name": information.mon_dex[name][0]["name"],
+    "element": element,
+    "Lv": 1,
+    "HP": HP,
+    "maxHP": HP,
+    "DMG": DMG,
+    "DEF": DEF,
+    "SPE": SPE,
+    "Speed": SPE,
+    "evo": 0,
+    "EXP": 0
+}
 
     print("\n" + "-" * 12 + " YOUR POKEMON " + "-" * 12)
     print("Name:", name)
@@ -84,6 +86,88 @@ def get_required_exp(level):
     """Calculate EXP required for the next level."""
     return int(50 * (1.12 ** (level - 1)))
 
+def chechk_evolution(player):
+    """
+    Evolution:
+    Level 25 -> Evolution 1
+    Level 50 -> Evolution 2
+    """
+
+    old_evo = player["evo"]
+
+    if player["Lv"] >= 50:
+        target_evo = 2
+    elif player["Lv"] >= 25:
+        target_evo = 1
+    else:
+        return
+
+    if target_evo <= old_evo:
+        return
+
+    stat_functions = {
+        "Water": information.stat_water,
+        "Wood": information.stat_wood,
+        "Fire": information.stat_fire,
+    }
+
+    stat_function = stat_functions[player["element"]]
+
+    # ฟังก์ชัน stat คืนค่า 4 ค่า
+    hp, dmg, defense, speed = stat_function(
+        player["Lv"], target_evo
+    )
+
+    old_max_hp = player["maxHP"]
+    old_hp = player["HP"]
+
+    player["evo"] = target_evo
+    player["maxHP"] = hp
+    player["DMG"] = dmg
+    player["DEF"] = defense
+    player["SPE"] = speed
+    player["Speed"] = speed
+    player["original_DMG"] = dmg
+
+    hp_increase = hp - old_max_hp
+    player["HP"] = min(hp, max(0, old_hp + hp_increase))
+
+    pokemon_data = information.mon_dex[player["pokemon_key"]][target_evo]
+    player["display_name"] = pokemon_data["name"]
+
+    print("\n" + "=" * 40)
+    print("✨ Pokémon ของคุณวิวัฒนาการแล้ว! ✨")
+    print(f"ชื่อร่างใหม่: {pokemon_data['name']}")
+    print(f"Level: {player['Lv']}")
+    print(f"HP: {player['HP']}/{player['maxHP']}")
+    print(f"DMG: {player['DMG']}")
+    print(f"DEF: {player['DEF']}")
+    print(f"SPE: {player['SPE']}")
+    print("=" * 40)
+
+    information.show_mon(
+        player["pokemon_key"],
+        target_evo + 1
+    )
+# เพิ่ม HP ตามส่วน max_HP
+    hp_increase = hp - old_max_hp
+    player["HP"] = min(hp, max(0, old_hp + hp_increase))
+
+# update name Evo
+    pokemon_data = information.mon_dex[player["pokemon_key"]][target_evo]
+    player["display_name"] = pokemon_data["name"]
+
+    print("\n" + "=" * 40)
+    print("✨ Pokémon ของคุณวิวัฒนาการแล้ว! ✨")
+    print(f"{pokemon_data['name']}")
+    print(f"LV: {player['Lv']}")
+    print(f"HP: {player['HP']}/{player['maxHP']}")
+    print(f"ATK: {player['DMG']}")
+    print(f"DEF: {player['DEF']}")
+    print("=" * 40)
+
+    information.show_mon(player["pokemon_key"], target_evo + 1)
+
 def gain_exp(player, reward):
     old_level = player["Lv"]
     current_exp = player.get("EXP", 0) + reward
@@ -104,11 +188,38 @@ def gain_exp(player, reward):
         }
 
         stat_function = stat_functions[player["element"]]
+
         max_hp, dmg, defense, speed = stat_function(
-            new_level, player.get("evo", 0)
+            new_level, player["evo"]
         )
 
-        # เพิ่ม HP ตามจำนวน HP สูงสุดที่เพิ่มขึ้น
+        hp_increase = max_hp - player["maxHP"]
+        player["maxHP"] = max_hp
+        player["HP"] = min(
+            max_hp,
+            max(0, player["HP"] + hp_increase)
+        )
+
+        player["DMG"] = dmg
+        player["DEF"] = defense
+        player["SPE"] = speed
+        player["Speed"] = speed
+        player["original_DMG"] = dmg
+
+        # ตรวจสอบวิวัฒนาการหลังเลเวลอัป
+        chechk_evolution(player)
+
+        print(f"\n🎉 Level Up! Lv.{old_level} -> Lv.{new_level}")
+        print(f"HP: {player['HP']}/{player['maxHP']}")
+        print(f"DMG: {player['DMG']}")
+        print(f"DEF: {player['DEF']}")
+        print(f"SPE: {player['SPE']}")
+        time.sleep(0.5)
+
+        print(f"\nได้รับ EXP {reward}")
+        print(f"EXP คงเหลือ: {player['EXP']}/{player['next_req_exp']}")
+
+    # เพิ่ม HP ตามจำนวน HP สูงสุดที่เพิ่มขึ้น
         hp_increase = max_hp - player["maxHP"]
         player["maxHP"] = max_hp
         player["HP"] = min(max_hp, player["HP"] + hp_increase)
@@ -119,6 +230,8 @@ def gain_exp(player, reward):
         player["Speed"] = speed
         player["original_DMG"] = dmg
 
+        chechk_evolution(player)
+        
         print(f"\n\n🎉 Level Up! Lv.{old_level} -> Lv.{new_level}")
         print(f"HP: {player['HP']}/{player['maxHP']}")
         print(f"DMG: {player['DMG']}")
@@ -162,7 +275,7 @@ def start():
         enemies.stage10
     ]
 
-    stage_exp = [20, 30, 40, 50, 60, 70, 80, 90, 100, 200]
+    stage_exp = [120, 350, 900, 2200, 5000, 11000, 24000, 50000, 100000, 250000]
 
     total_exp = 0
     current_stage = 0
