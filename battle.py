@@ -1,9 +1,33 @@
 import random
+import time
 from unittest import result
 import information as p
 import enemies as e
 
-
+# รายละเอียดสกิลตามธาตุ
+skill_info = {
+    "Water": [
+        ("Normal Attack","โจมตีด้วยการพุ่งชน"),
+        ("Water Pulse", "โจมตีด้วยพลังน้ำ"),
+        ("Aqua Shield", "โจมตีด้วยพลังน้ำ"),
+        ("Tidal Wave", "คลื่นน้ำโจมตีรุนแรง"),
+        ("Aqua Burst", "โจมตีรุนแรงและทำให้บอสติด Stun")
+    ],
+    "Wood": [
+        ("Normal Attack", "โจมตีด้วยการกระทืบ"),
+        ("Leaf Strike", "โจมตีด้วยพลังพืช"),
+        ("Vine Whip", "โจมตีด้วยเถาวัลย์"),
+        ("Forest Force", "โจมตีด้วยพลังป่า"),
+        ("Nature Break", "โจมตีรุนแรงโดยใช้พลังป้องกัน")
+    ],
+    "Fire": [
+        ("Normal Attack", "โจมตีด้วยการข่วน"),
+        ("Flame Shot", "โจมตีด้วยไฟ"),
+        ("Burning Flame", "โจมตีและทำให้ศัตรูติด Burn"),
+        ("Inferno", "โจมตีด้วยไฟรุนแรง"),
+        ("Blazing Burst", "โจมตีด้วยไฟมหาศาล")
+    ]
+}
 
 # =====================================
 # ระบบแพ้ทาง - ชนะทางของธาตุ
@@ -80,10 +104,21 @@ def attack(attacker, defender):
 
 def choose_player_action(player):
     while True:
+        print("-----------------------------")
+        print("1", skill_info[player["element"]][0][0], "-", skill_info[player["element"]][0][1])
+        print("2", skill_info[player["element"]][1][0], "-", skill_info[player["element"]][1][1])
+        print("3", skill_info[player["element"]][2][0], "-", skill_info[player["element"]][2][1])
+        print("4", skill_info[player["element"]][3][0], "-", skill_info[player["element"]][3][1])
+        print("5", skill_info[player["element"]][4][0], "-", skill_info[player["element"]][4][1],f"([until turn {until_turn}/4])")
         choice = input("เลือกคำสั่ง (1-5): ").strip()
 
-        if choice in ("1", "2", "3", "4", "5"):
+        if choice in ("1", "2", "3", "4"):
             return choice
+        elif choice == "5":
+            if until_turn < 4:
+                print("===================================")
+                print(f"⚠️ คุณยังไม่สามารถใช้สกิล {skill_info[player['element']][4][0]} ได้! (ต้องรอจนถึงเทิร์นที่ 4)")
+                continue
 
         print("⚠️ คำสั่งไม่ถูกต้อง กรุณาเลือก 1-5")
         print("💚 คุณยังไม่เสียเทิร์น!")
@@ -91,28 +126,6 @@ def choose_player_action(player):
 def player_skill(player, enemy, choice=None):
     
     element = player["element"]
-
-    # รายละเอียดสกิลตามธาตุ
-    skill_info = {
-        "Water": [
-            ("Water Pulse", "โจมตีด้วยพลังน้ำ"),
-            ("Aqua Shield", "โจมตีด้วยพลังน้ำ"),
-            ("Tidal Wave", "คลื่นน้ำโจมตีรุนแรง"),
-            ("Aqua Burst", "โจมตีรุนแรงและทำให้บอสติด Stun")
-        ],
-        "Wood": [
-            ("Leaf Strike", "โจมตีด้วยพลังพืช"),
-            ("Vine Whip", "โจมตีด้วยเถาวัลย์"),
-            ("Forest Force", "โจมตีด้วยพลังป่า"),
-            ("Nature Break", "โจมตีรุนแรงโดยใช้พลังป้องกัน")
-        ],
-        "Fire": [
-            ("Flame Shot", "โจมตีด้วยไฟ"),
-            ("Burning Flame", "โจมตีและทำให้ศัตรูติด Burn"),
-            ("Inferno", "โจมตีด้วยไฟรุนแรง"),
-            ("Blazing Burst", "โจมตีด้วยไฟมหาศาล")
-        ]
-    }
 
     if choice is None:
         choice = choose_player_action(player)
@@ -123,7 +136,7 @@ def player_skill(player, enemy, choice=None):
         return
 
     skill = int(choice) - 1
-    skill_name, description = skill_info[element][skill - 1]
+    skill_name, description = skill_info[element][skill]
 
     print(f"\n✨ {player['name']} ใช้ {skill_name}!")
     print(f"📖 {description}")
@@ -330,17 +343,21 @@ def battle(player, enemy):
     enemy["stun_turns"] = 0
 
     turn = 1
+    global until_turn
+    until_turn = 1
 
-    print("\n================================")
-    print("          BATTLE START")
-    print("================================")
+    print("\n" + "-" * 36)
+    print("             BATTLE START")
+    print("-" * 36)
     print(f"Player: {player['name']}")
     print(f"Enemy: {enemy['name']}")
+    time.sleep(1)
 
     while player["HP"] > 0 and enemy["HP"] > 0:
-        print(f"\n========== TURN {turn} ==========")
+        print(f"\n\n{'-' * 12} TURN {turn} {'-' * 12}")
         print(f"Your HP: {player['HP']}/{player['maxHP']}")
         print(f"Enemy HP: {enemy['HP']}/{enemy['maxHP']}")
+        time.sleep(1)
 
         # ใช้ Speed ตัดสินว่าใครมีโอกาสเริ่มก่อน
         if e.has_turn_priority(enemy, player):
@@ -358,6 +375,7 @@ def battle(player, enemy):
 
             if enemy["HP"] > 0:
                 boss_action(enemy, player)
+        time.sleep(0.5)
 
         # ตรวจสอบผลการต่อสู้
         if enemy["HP"] <= 0:
@@ -379,6 +397,8 @@ def battle(player, enemy):
         if player["HP"] <= 0:
             print("\nYOU LOSE!")
             return False
+        time.sleep(0.5)
         turn += 1
+        until_turn += 1
 
     return player["HP"] > 0

@@ -1,20 +1,9 @@
 
+import time
 import information
 import enemies
 import battle
-import tkinter as tk
 
-def show_art(parent, pokemon):
-    art = pokemon.get("art", [])
-
-    label = tk.Label(
-        parent,
-        text="\n".join(art),
-        font=("Courier New", 10),
-        justify="left"
-    )
-    label.pack()
-    return label
 
 # =====================================
 # เลือกโปเกมอนเริ่มต้น
@@ -23,8 +12,9 @@ def show_art(parent, pokemon):
 def choose_pokemon():
     print("Welcome to the Campus Colosseum")
     print("Let's join the campus to bring the peace back!")
-    print("--------------------------------------")
+    print("-" * 38)
     print("Choose your own confidant.")
+    time.sleep(1)
 
     information.show_mon("Water_Starter", 1)
     information.show_mon("Wood_Starter", 1)
@@ -56,6 +46,7 @@ def choose_pokemon():
 
     print(f"\nYou choose {name}")
     information.show_mon(name, 1)
+    time.sleep(0.5)
 
     player = {
         "name": name,
@@ -71,7 +62,7 @@ def choose_pokemon():
         "EXP": 0
     }
 
-    print("\n========== YOUR POKEMON ==========")
+    print("\n" + "-" * 12 + " YOUR POKEMON " + "-" * 12)
     print("Name:", name)
     print("Element:", element)
     print("Level:", player["Lv"])
@@ -79,6 +70,7 @@ def choose_pokemon():
     print("DMG:", DMG)
     print("DEF:", DEF)
     print("Speed:", SPE)
+    time.sleep(0.5)
 
     return player
 
@@ -92,55 +84,6 @@ def get_required_exp(level):
     """Calculate EXP required for the next level."""
     return int(50 * (1.12 ** (level - 1)))
 
-def check_evolution(player):
-    old_evo = player.get("evo", 0)
-    level = player["Lv"]
-
-    if level >= 50:
-        new_evo = 2
-    elif level >= 25:
-        new_evo = 1
-    else:
-        new_evo = 0
-
-    if new_evo <= old_evo:
-        return
-
-    player["evo"] = new_evo
-
-# แสดงร่างใหม่เมื่อวิวัฒนาการ
-    information.show_mon(player["name"], new_evo + 1)
-
-    print(f"\n🎉 {player['name']} evolved!")
-    print(f"Evolution: {old_evo} -> {new_evo}")
-
-    stat_functions = {
-        "Water": information.stat_water,
-        "Wood": information.stat_wood,
-        "Fire": information.stat_fire,
-    }
-
-    stat_function = stat_functions[player["element"]]
-    max_hp, dmg, defense, speed = stat_function(
-        player["Lv"], new_evo
-    )
-
-    hp_increase = max_hp - player["maxHP"]
-    player["maxHP"] = max_hp
-    player["HP"] = min(max_hp, player["HP"] + hp_increase)
-
-    player["DMG"] = dmg
-    player["DEF"] = defense
-    player["SPE"] = speed
-    player["Speed"] = speed
-    player["original_DMG"] = dmg
-
-    print(f"HP: {player['HP']}/{player['maxHP']}")
-    print(f"DMG: {player['DMG']}")
-    print(f"DEF: {player['DEF']}")
-    print(f"SPE: {player['SPE']}")
-
-
 def gain_exp(player, reward):
     old_level = player["Lv"]
     current_exp = player.get("EXP", 0) + reward
@@ -153,15 +96,35 @@ def gain_exp(player, reward):
     player["EXP"] = remaining_exp
     player["next_req_exp"] = next_exp
 
-    # ตรวจ Evolution หลังอัปเดตเลเวล
-    check_evolution(player)
-
     if new_level > old_level:
-        print(f"\n🎉 Level Up! Lv.{old_level} -> Lv.{new_level}")
+        stat_functions = {
+            "Water": information.stat_water,
+            "Wood": information.stat_wood,
+            "Fire": information.stat_fire,
+        }
+
+        stat_function = stat_functions[player["element"]]
+        max_hp, dmg, defense, speed = stat_function(
+            new_level, player.get("evo", 0)
+        )
+
+        # เพิ่ม HP ตามจำนวน HP สูงสุดที่เพิ่มขึ้น
+        hp_increase = max_hp - player["maxHP"]
+        player["maxHP"] = max_hp
+        player["HP"] = min(max_hp, player["HP"] + hp_increase)
+
+        player["DMG"] = dmg
+        player["DEF"] = defense
+        player["SPE"] = speed
+        player["Speed"] = speed
+        player["original_DMG"] = dmg
+
+        print(f"\n\n🎉 Level Up! Lv.{old_level} -> Lv.{new_level}")
         print(f"HP: {player['HP']}/{player['maxHP']}")
         print(f"DMG: {player['DMG']}")
         print(f"DEF: {player['DEF']}")
         print(f"SPE: {player['SPE']}")
+        time.sleep(0.5)
 
     print(f"ได้รับ EXP {reward}")
     print(
@@ -169,14 +132,16 @@ def gain_exp(player, reward):
         f"{player['next_req_exp']}"
     )
 
+
 def show_exp(player, total_exp):
     required_exp = get_required_exp(player["Lv"])
     exp_needed = max(0, required_exp - total_exp)
 
-    print("\n========== EXP STATUS ==========")
+    print("\n" + "-" * 12 + " EXP STATUS " + "-" * 12)
     print(f"Level: {player['Lv']}")
     print(f"EXP: {total_exp}/{required_exp}")
     print(f"EXP needed to level up: {exp_needed}")
+    time.sleep(0.5)
 
 # =====================================
 #       เริ่มเกม
@@ -197,17 +162,15 @@ def start():
         enemies.stage10
     ]
 
-    stage_exp = [120, 350, 900, 2200, 5000, 11000, 24000, 50000, 100000, 250000]
-    
+    stage_exp = [20, 30, 40, 50, 60, 70, 80, 90, 100, 200]
+
     total_exp = 0
     current_stage = 0
 
     while current_stage < len(stages):
-        print(f"\n========== STAGE {current_stage + 1} ==========")
-        information.show_mon(
-    player["name"],
-    min(player["evo"] + 1, 3)
-)
+        print(f"\n\n{'-' * 12} STAGE {current_stage + 1} {'-' * 12}")
+        time.sleep(0.5)
+
         enemy = stages[current_stage]()
         result = battle.battle(player, enemy)
 
@@ -219,6 +182,7 @@ def start():
 
             print(f"\nYou cleared Stage {current_stage + 1}!")
             print(f"EXP gained: {reward}")
+            time.sleep(0.5)
 
             show_exp(player, player["EXP"])
 
@@ -229,13 +193,15 @@ def start():
                 player["HP"] = player["maxHP"]
                 print("\nYour HP has been fully restored!")
                 print(f"HP: {player['HP']}/{player['maxHP']}")
+                time.sleep(0.5)
 
         else:
             # Player loses
-            print("\n========== YOU LOSE ==========")
+            print("\n" + "-" * 12 + " YOU LOSE " + "-" * 12)
             print("1. Give up")
             print("2. Replay previous stage to gain EXP")
             print("3. Retry this stage")
+            time.sleep(0.5)
 
             while True:
                 choice = input("Choose (1-3): ").strip()
@@ -253,6 +219,7 @@ def start():
 
                     previous_stage = current_stage - 1
                     print(f"\nReplaying Stage {previous_stage + 1}")
+                    time.sleep(0.5)
 
                     player["HP"] = player["maxHP"]
                     old_enemy = stages[previous_stage]()
@@ -265,6 +232,7 @@ def start():
 
                         print("\nYou won the previous stage!")
                         print(f"EXP gained: {reward}")
+                        time.sleep(0.5)
                         show_exp(player, player["EXP"])
 
                     else:
@@ -278,6 +246,7 @@ def start():
                 elif choice == "3":
                     player["HP"] = player["maxHP"]
                     print("\nRetrying current stage...")
+                    time.sleep(0.5)
                     break
 
                 else:
@@ -288,7 +257,7 @@ def start():
             if choice == "2":
                 continue
 
-    print("\nCongratulations!")
+    print("\n\nCongratulations!")
     print("You cleared all 10 stages!")
     print(f"Final EXP: {total_exp}")
     show_exp(player, total_exp)
