@@ -119,6 +119,8 @@ def choose_player_action(player):
                 print("===================================")
                 print(f"⚠️ คุณยังไม่สามารถใช้สกิล {skill_info[player['element']][4][0]} ได้! (ต้องรอจนถึงเทิร์นที่ 4)")
                 continue
+            else:
+                return choice
 
         print("⚠️ คำสั่งไม่ถูกต้อง กรุณาเลือก 1-5")
         print("💚 คุณยังไม่เสียเทิร์น!")
