@@ -21,7 +21,12 @@ def choose_pokemon():
     information.show_mon("Fire_Starter", 1)
 
     while True:
-        user_input = input("Choose your confidant (1-3): ").strip()
+        try:
+            user_input = input("Choose your confidant (1-3): ").strip()
+        except EOFError:
+            # ยุติการเลือกโปเกมอนเมื่ออินพุตถูกปิด
+            print("\nปิดอินพุตแล้ว ยกเลิกเกม")
+            return None
 
         if user_input == "1":
             name = "Water_Starter"
@@ -79,18 +84,18 @@ def choose_pokemon():
 
 
 # =====================================
-#       STATS EXP
+#       ค่าสถานะและ EXP
 # =====================================
 
 def get_required_exp(level):
-    """Calculate EXP required for the next level."""
+    """คำนวณ EXP ที่ต้องใช้เพื่อเลื่อนเลเวลถัดไป"""
     return int(50 * (1.12 ** (level - 1)))
 
 def chechk_evolution(player):
     """
-    Evolution:
-    Level 25 -> Evolution 1
-    Level 50 -> Evolution 2
+    วิวัฒนาการ:
+    เลเวล 25 -> วิวัฒนาการขั้นที่ 1
+    เลเวล 50 -> วิวัฒนาการขั้นที่ 2
     """
 
     old_evo = player["evo"]
@@ -153,7 +158,7 @@ def chechk_evolution(player):
     hp_increase = hp - old_max_hp
     player["HP"] = min(hp, max(0, old_hp + hp_increase))
 
-# update name Evo
+# อัปเดตชื่อหลังวิวัฒนาการ
     pokemon_data = information.mon_dex[player["pokemon_key"]][target_evo]
     player["display_name"] = pokemon_data["name"]
 
@@ -261,6 +266,8 @@ def show_exp(player, total_exp):
 # =====================================
 def start():
     player = choose_pokemon()
+    if player is None:
+        return
 
     stages = [
         enemies.stage1,
@@ -288,7 +295,7 @@ def start():
         result = battle.battle(player, enemy)
 
         if result:
-            # Player wins
+            # ผู้เล่นชนะ
             reward = stage_exp[current_stage]
             total_exp += reward
             gain_exp(player, reward)
@@ -301,7 +308,7 @@ def start():
 
             current_stage += 1
 
-            # Restore HP before the next stage
+            # ฟื้นฟู HP ก่อนเริ่มด่านถัดไป
             if current_stage < len(stages):
                 player["HP"] = player["maxHP"]
                 print("\nYour HP has been fully restored!")
@@ -309,7 +316,7 @@ def start():
                 time.sleep(0.5)
 
         else:
-            # Player loses
+            # ผู้เล่นแพ้
             print("\n" + "-" * 12 + " YOU LOSE " + "-" * 12)
             print("1. Give up")
             print("2. Replay previous stage to gain EXP")
@@ -317,7 +324,12 @@ def start():
             time.sleep(0.5)
 
             while True:
-                choice = input("Choose (1-3): ").strip()
+                try:
+                    choice = input("Choose (1-3): ").strip()
+                except EOFError:
+                    # ออกจากเมนูเมื่ออินพุตถูกปิด
+                    print("\nปิดอินพุตแล้ว ยกเลิกเกม")
+                    return
 
                 if choice == "1":
                     print("\nGame Over!")
@@ -353,7 +365,7 @@ def start():
 
                     player["HP"] = player["maxHP"]
                     print("HP restored!")
-                    # Return to the menu after replaying
+                    # กลับไปแสดงเมนูหลังเล่นด่านก่อนหน้าซ้ำ
                     continue
 
                 elif choice == "3":
@@ -365,8 +377,8 @@ def start():
                 else:
                     print("Please choose 1, 2, or 3.")
 
-            # If the player chose to replay the previous stage,
-            # keep showing the menu until they choose retry or give up.
+            # หากผู้เล่นเลือกเล่นด่านก่อนหน้าซ้ำ ให้แสดงเมนูต่อไป
+            # จนกว่าจะเลือกลองด่านนี้อีกครั้งหรือยอมแพ้
             if choice == "2":
                 continue
 
@@ -377,4 +389,8 @@ def start():
 
 
 if __name__ == "__main__":
-    start()
+    try:
+        start()
+    except (KeyboardInterrupt, EOFError):
+        # ออกจากเกมอย่างสุภาพเมื่อผู้เล่นกด Ctrl+C หรือปิดอินพุต
+        print("\nยกเลิกเกมแล้ว")
