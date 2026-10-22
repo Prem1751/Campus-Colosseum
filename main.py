@@ -5,6 +5,9 @@ import enemies
 import battle
 
 
+STAGE_EXP = [120, 350, 900, 2200, 5000, 11000, 24000, 50000, 100000, 250000]
+
+
 # =====================================
 # เลือกโปเกมอนเริ่มต้น
 # =====================================
@@ -282,8 +285,6 @@ def start():
         enemies.stage10
     ]
 
-    stage_exp = [120, 350, 900, 2200, 5000, 11000, 24000, 50000, 100000, 250000]
-
     total_exp = 0
     current_stage = 0
 
@@ -296,7 +297,7 @@ def start():
 
         if result:
             # ผู้เล่นชนะ
-            reward = stage_exp[current_stage]
+            reward = STAGE_EXP[current_stage]
             total_exp += reward
             gain_exp(player, reward)
 
@@ -351,7 +352,7 @@ def start():
                     grind_result = battle.battle(player, old_enemy)
 
                     if grind_result:
-                        reward = stage_exp[previous_stage]
+                        reward = STAGE_EXP[previous_stage]
                         total_exp += reward
                         gain_exp(player, reward)
 

@@ -128,6 +128,7 @@ def choose_player_action(player):
 def player_skill(player, enemy, choice=None):
     
     element = player["element"]
+    global until_turn
 
     if choice is None:
         choice = choose_player_action(player)
@@ -136,6 +137,10 @@ def player_skill(player, enemy, choice=None):
     if choice == "1":
         attack(player, enemy)
         return
+
+    # เริ่มนับคูลดาวน์ใหม่เมื่อผู้เล่นใช้ท่าอัลติ
+    if choice == "5":
+        until_turn = 0
 
     skill = int(choice) - 1
     skill_name, description = skill_info[element][skill]
