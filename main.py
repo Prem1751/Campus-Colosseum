@@ -11,7 +11,6 @@ STAGE_EXP = [120, 350, 900, 2200, 5000, 11000, 24000, 50000, 100000, 250000]
 # =====================================
 # เลือกโปเกมอนเริ่มต้น
 # =====================================
-
 def choose_pokemon():
     print("Welcome to the Campus Colosseum")
     print("Let's join the campus to bring the peace back!")
@@ -238,13 +237,6 @@ def gain_exp(player, reward):
         player["Speed"] = speed
         player["original_DMG"] = dmg
 
-        chechk_evolution(player)
-        
-        print(f"\n\n🎉 Level Up! Lv.{old_level} -> Lv.{new_level}")
-        print(f"HP: {player['HP']}/{player['maxHP']}")
-        print(f"DMG: {player['DMG']}")
-        print(f"DEF: {player['DEF']}")
-        print(f"SPE: {player['SPE']}")
         time.sleep(0.5)
 
     print(f"ได้รับ EXP {reward}")
